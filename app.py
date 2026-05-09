@@ -18,7 +18,7 @@ def card():
     width, height = image.size
 
     # EVEN BIGGER font
-    font = ImageFont.truetype("fonts/arial.ttf", 110)
+    font = ImageFont.truetype("arial.ttf", 110)
 
     line1 = f"{username} has just landed!"
     line2 = f"Member #{member}"
