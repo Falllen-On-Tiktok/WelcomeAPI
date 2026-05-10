@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 import requests
 from io import BytesIO
 import os
@@ -9,88 +9,51 @@ app = Flask(__name__)
 
 os.makedirs("static", exist_ok=True)
 
-# ---- SAFE FONT LOADER (prevents Render crash) ----
-def load_font(size):
-    try:
-        return ImageFont.truetype("arial.ttf", size)
-    except:
-        return ImageFont.load_default()
-
 @app.route("/banner", methods=["GET"])
 def banner():
     try:
-        username = request.args.get("username", "Unknown")
-        member = request.args.get("member", "0")
         avatar_url = request.args.get("avatar")
-        event_type = request.args.get("type", "join")
 
-        # ---- BACKGROUND SWITCH ----
-        if event_type == "leave":
-            bg = Image.open("leave.jpg").convert("RGBA")
-            status_text = "Has Departed from CVIA!"
-        else:
-            bg = Image.open("join.jpg").convert("RGBA")
-            status_text = "Has Landed at CVIA!"
-
+        # Load background
+        bg = Image.open("background.jpg").convert("RGBA")
         width, height = bg.size
-        draw = ImageDraw.Draw(bg)
 
-        # ---- YOUR REQUIRED FONT SIZES ----
-        font = load_font(125)
-        small_font = load_font(120)
+        if avatar_url and avatar_url.startswith("http"):
+            response = requests.get(avatar_url, timeout=5)
 
-        # ---- TEXT POSITION (UPDATED AS REQUESTED) ----
-        text_x = 80
-        text_y = height // 2 - 200
+            # Safety check (prevents crash)
+            if "image" not in response.headers.get("Content-Type", ""):
+                raise ValueError("Invalid image URL")
 
-        draw.text(
-            (text_x, text_y),
-            f"Flight #MBRS-{member}",
-            fill="white",
-            font=font
-        )
-
-        draw.text(
-            (text_x, text_y + 135),
-            status_text,
-            fill="white",
-            font=small_font
-        )
-
-        # ---- AVATAR (CENTER CIRCLE, SIZE 440) ----
-        if avatar_url:
-            response = requests.get(avatar_url)
             avatar = Image.open(BytesIO(response.content)).convert("RGBA")
 
+            # ---- REQUIRED SIZE ----
             size = 440
             avatar = avatar.resize((size, size))
 
+            # ---- CIRCLE MASK ----
             mask = Image.new("L", (size, size), 0)
-            mask_draw = ImageDraw.Draw(mask)
-            mask_draw.ellipse((0, 0, size, size), fill=255)
+            draw = ImageDraw.Draw(mask)
+            draw.ellipse((0, 0, size, size), fill=255)
 
             avatar.putalpha(mask)
 
-            center_x = width // 2
-            center_y = height // 2
+            # ---- CENTER POSITION ----
+            x = (width - size) // 2
+            y = (height - size) // 2
 
-            bg.paste(
-                avatar,
-                (center_x - size // 2, center_y - size // 2),
-                avatar
-            )
+            bg.paste(avatar, (x, y), avatar)
 
-        # ---- SAVE FILE ----
+        # Save output
         filename = f"{int(time.time() * 1000)}.png"
-        filepath = f"static/{filename}"
-        bg.save(filepath)
+        path = f"static/{filename}"
+        bg.save(path)
 
         return jsonify({
             "url": f"https://welcomeapi-3wqc.onrender.com/static/{filename}"
         })
 
     except Exception as e:
-        # This prevents Render full crash spam
         return jsonify({"error": str(e)}), 500
 
 
