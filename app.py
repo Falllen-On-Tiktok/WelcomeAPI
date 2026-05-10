@@ -1,82 +1,39 @@
-from flask import Flask, request, send_file
+from flask import Flask, request, send_file, jsonify
 from PIL import Image, ImageDraw, ImageFont
-import io
 import requests
+from io import BytesIO
 
 app = Flask(__name__)
 
-@app.route("/card")
-def card():
-    username = request.args.get("user", "Unknown")
-    member = request.args.get("member", "0")
-    avatar_url = request.args.get("avatar")
+@app.route("/banner", methods=["POST"])
+def banner():
+    data = request.json  # <-- POST JSON body
 
-    # Load background
-    image = Image.open("background.jpg").convert("RGBA")
-    draw = ImageDraw.Draw(image)
+    username = data.get("username", "Unknown")
+    member = data.get("member", "0")
+    avatar_url = data.get("avatar")
 
-    width, height = image.size
+    bg = Image.open("background.jpg").convert("RGBA")
+    draw = ImageDraw.Draw(bg)
+    font = ImageFont.truetype("arial.ttf", 50)
 
-    # EVEN BIGGER font
-    font = ImageFont.truetype("arial.ttf", 110)
+    draw.text((100, 100), f"{username} has just landed!", fill="white", font=font)
+    draw.text((100, 170), f"Member #{member}", fill="white", font=font)
 
-    line1 = f"{username} has just landed!"
-    line2 = f"Member #{member}"
-
-    # Measure text sizes
-    def text_size(text):
-        bbox = draw.textbbox((0, 0), text, font=font)
-        return bbox[2] - bbox[0], bbox[3] - bbox[1]
-
-    l1_w, l1_h = text_size(line1)
-    l2_w, l2_h = text_size(line2)
-
-    avatar_size = 300  # bigger avatar
-
-    total_height = l1_h + 20 + l2_h + 40 + avatar_size
-
-    start_y = (height - total_height) // 2
-
-    # Center text helper
-    def draw_center(text, y):
-        w, _ = text_size(text)
-        x = (width - w) // 2
-        draw.text((x, y), text, font=font, fill="white")
-
-    # Draw text (centered block)
-    y = start_y
-    draw_center(line1, y)
-    y += l1_h + 20
-
-    draw_center(line2, y)
-    y += l2_h + 40
-
-    # ---------------- CIRCULAR AVATAR ----------------
     if avatar_url:
-        try:
-            response = requests.get(avatar_url)
-            avatar = Image.open(io.BytesIO(response.content)).convert("RGBA")
+        response = requests.get(avatar_url)
+        avatar = Image.open(BytesIO(response.content)).resize((180, 180))
 
-            avatar = avatar.resize((avatar_size, avatar_size))
+        mask = Image.new("L", (180, 180), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, 180, 180), fill=255)
 
-            mask = Image.new("L", (avatar_size, avatar_size), 0)
-            mask_draw = ImageDraw.Draw(mask)
-            mask_draw.ellipse((0, 0, avatar_size, avatar_size), fill=255)
+        bg.paste(avatar, (100, 260), mask)
 
-            avatar.putalpha(mask)
+    output = BytesIO()
+    bg.save(output, format="PNG")
+    output.seek(0)
 
-            x = (width - avatar_size) // 2
-            image.paste(avatar, (x, y), avatar)
+    return send_file(output, mimetype="image/png")
 
-        except Exception as e:
-            print("Avatar load failed:", e)
-
-    # Save to memory
-    img_io = io.BytesIO()
-    image.save(img_io, "PNG")
-    img_io.seek(0)
-
-    return send_file(img_io, mimetype="image/png")
-
-
-app.run(host="0.0.0.0", port=5000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
