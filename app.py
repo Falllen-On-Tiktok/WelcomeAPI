@@ -1,17 +1,15 @@
-from flask import Flask, request, send_file, jsonify
+from flask import Flask, request, send_file
 from PIL import Image, ImageDraw, ImageFont
 import requests
 from io import BytesIO
 
 app = Flask(__name__)
 
-@app.route("/banner", methods=["POST"])
+@app.route("/banner", methods=["GET"])
 def banner():
-    data = request.json  # <-- POST JSON body
-
-    username = data.get("username", "Unknown")
-    member = data.get("member", "0")
-    avatar_url = data.get("avatar")
+    username = request.args.get("username", "Unknown")
+    member = request.args.get("member", "0")
+    avatar_url = request.args.get("avatar")
 
     bg = Image.open("background.jpg").convert("RGBA")
     draw = ImageDraw.Draw(bg)
