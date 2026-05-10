@@ -42,7 +42,7 @@ def banner():
         response = requests.get(avatar_url)
         avatar = Image.open(BytesIO(response.content)).convert("RGBA")
 
-        size = 220
+        size = 440
         avatar = avatar.resize((size, size))
 
         # Create circular mask
