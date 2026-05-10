@@ -16,8 +16,8 @@ def banner():
 
     draw = ImageDraw.Draw(bg)
 
-    font = ImageFont.truetype("arial.ttf", 172)
-    small_font = ImageFont.truetype("arial.ttf", 167)
+    font = ImageFont.truetype("arial.ttf", 125)
+    small_font = ImageFont.truetype("arial.ttf", 120)
 
     # ---- TEXT (center-left vertically aligned) ----
     text_x = 80
