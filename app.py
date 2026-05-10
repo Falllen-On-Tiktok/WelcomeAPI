@@ -65,7 +65,9 @@ def banner():
 @app.route("/static/<path:filename>")
 def static_files(filename):
     return app.send_static_file(filename)
-
+@app.route("/ping")
+def ping():
+    return "awake"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
