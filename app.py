@@ -13,38 +13,43 @@ os.makedirs("static", exist_ok=True)
 def banner():
     try:
         avatar_url = request.args.get("avatar")
+        event_type = request.args.get("type", "join")  # join or leave
 
-        # Load background
-        bg = Image.open("background.jpg").convert("RGBA")
+        # ---- BACKGROUND SWITCH ----
+        if event_type == "leave":
+            bg = Image.open("leave.jpg").convert("RGBA")
+        else:
+            bg = Image.open("join.jpg").convert("RGBA")
+
         width, height = bg.size
 
+        # ---- AVATAR ----
         if avatar_url and avatar_url.startswith("http"):
             response = requests.get(avatar_url, timeout=5)
 
-            # Safety check (prevents crash)
             if "image" not in response.headers.get("Content-Type", ""):
                 raise ValueError("Invalid image URL")
 
             avatar = Image.open(BytesIO(response.content)).convert("RGBA")
 
-            # ---- REQUIRED SIZE ----
+            # REQUIRED SIZE
             size = 440
             avatar = avatar.resize((size, size))
 
-            # ---- CIRCLE MASK ----
+            # CIRCLE MASK
             mask = Image.new("L", (size, size), 0)
             draw = ImageDraw.Draw(mask)
             draw.ellipse((0, 0, size, size), fill=255)
 
             avatar.putalpha(mask)
 
-            # ---- CENTER POSITION ----
+            # CENTER POSITION
             x = (width - size) // 2
             y = (height - size) // 2
 
             bg.paste(avatar, (x, y), avatar)
 
-        # Save output
+        # ---- SAVE OUTPUT ----
         filename = f"{int(time.time() * 1000)}.png"
         path = f"static/{filename}"
         bg.save(path)
