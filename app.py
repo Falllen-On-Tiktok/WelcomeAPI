@@ -31,7 +31,7 @@ def banner():
     )
 
     draw.text(
-        (text_x, text_y + 115),
+        (text_x, text_y + 135),
         "Has Landed at CVIA!",
         fill="white",
         font=small_font
