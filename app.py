@@ -55,7 +55,7 @@ def banner():
         bg.save(path)
 
         return jsonify({
-            "url": f"https://welcomeapi-3wqc.onrender.com/static/{filename}"
+            "url": f"https://welcomeapi-6ujg.onrender.com/static/{filename}"
         })
 
     except Exception as e:
