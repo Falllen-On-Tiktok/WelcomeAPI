@@ -13,13 +13,10 @@ os.makedirs("static", exist_ok=True)
 def banner():
     try:
         avatar_url = request.args.get("avatar")
-        event_type = request.args.get("type", "join")  # join or leave
+        event_type = request.args.get("type", "join")
+        image_url = request.args.get("bg")
 
-        # ---- BACKGROUND SWITCH ----
-        if event_type == "leave":
-            bg = Image.open("leave.jpg").convert("RGBA")
-        else:
-            bg = Image.open("join.jpg").convert("RGBA")
+        bg = Image.open(image_url).convert("RGBA")
 
         width, height = bg.size
 
